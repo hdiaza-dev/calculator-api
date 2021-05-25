@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class AddService.
  */
@@ -23,8 +22,7 @@ public class AddService implements ICalculatorService {
 	 */
 	@Override
 	public BigDecimal operate(BigDecimal op1, BigDecimal op2) {
-		// TODO Auto-generated method stub
-		return null;
+		return op1.add(op2);
 	}
 
 }
