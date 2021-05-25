@@ -1,65 +1,95 @@
-Calculator
---------------------
+# Calculator
 
+## Implementación
+He decidido implementar un endpoint de tipo GET (/operate) que reciba tres parámetros obligatorios.
 
-He decidido crear un objeto Operator que contiene las siguientes propiedades:
+- op1. BigDecimal con el primer valor de la operación
+- op2. BigDecimal con el segundo valor de la operación.
+- operation. String con la operación. Por ahora solamente tenemos dos operaciones **add** y **sub**.
 
-* Operator operator1 (se instancia a si mismo)
-* Operator operator2 (se instancia a si mismo)
-* String operation 
-* Double value
-* enum Operation que contiene las dos diferencias operation a implementar (ADD y SUB).
+Creamos una unica interfaz para los servicios (un servicio por operación) que define un solo método **operate(BigDecimal op1, BigDecimal op2)**
 
-Con este diseño podemos anidar operaciones teniendo en cuenta que tendremos que validar los Operator que llegan al endpoint para que se de una de estas dos situaciones:
+Cada una de las implementaciones de este interfaz define una operación en si misma y se anota con **@Qualifier** con el mismo nombre que nos llega como parámetro de entrada (operation). Por esta razón la implementación de nuevas operaciones no significa la modificación de código existente, simplemente creando una implementacion del interfaz y su método y anotándo con **@Qualifier** con el nombre descriptivo que enviaremos en el campo operation al endpoint.
 
-* Tiene informado la propiedad value y no informadas operator1, operator2 y operation.
-* No tiene informada la propiedad value por lo que será obligatorio que tenga informadas las tres otras propiedades operator1, operator2 y operation.
+En el controlador un metodo genérico (getCalculatorService) nos devuelve a partir del nombre del servicio la instancia necesaria para hacer el cálculo solicitado.
 
-En la capa de controller recibimos un objeto Operator en el endpoint /operate y validamos con las considerciones anteriores que este objeto está bien formado, si no es asi devolveremos BadRequest (400).
-Desde la capa de controller después de validar el parámetro de entrada si es correcta llamaremos al servicio operate generico de CalculatorService que de manera recursiva calcula los resultados de operators y suboperators.
+Para controlar operaciones no implementadas creo un ExceltionHandler que captura la NoSuchBeanDefinitionException que devuelve getCalculatorService cuando se intenta recuperar esta operación. Se tracea el error con el tracer proporcionado implementado como servicio.
 
-Test Services
+## Tests
+Se crean los siguientes tests:
 
-* whenAddOperationWhithoutSubOperationReturnCorrectValue
+#### Controller
+**whenParametersAreNotValidThenReturns400**
+- Este test comprueba que si no introducimos todos los parámetros necesarios (todos son obligatorios) o si el parámetro operation tiene un valor que no coincide con los actualmente aceptados (add y sub) nos devuelve un 400.
 
-Testea una operacion de suma básica sin operators anidados
+**whenParametersAreValidThenReturns200**
+- Este test comprueba que si introducimos todos los parámetros y sus valores correctamente nos devuelve 200.
 
-* whenSubOperationWhithoutSubOperationReturnCorrectValue
+#### Services
+**whenAddOperationReturnCorrectValue**
+- Validamos que el servicio efectua la operacion add de manera correcta.
 
-Testea una operacion de resta básica sin operators anidados
+**whenAddOperationWithScaleAndPrecisionReturnCorrectValue**
+- Validamos que el servicio efectua la operacion add de manera correcta con parámetros en los la escala y precisión han sido ajustadas.
 
-* whenOperationWhithSubOperationReturnCorrectValue
+**whenSubOperationReturnCorrectValue**
+- Validamos que el servicio efectua la operacion sub de manera correcta.
 
-Testea una operacion básica con suboperators anidados y operaciones mezcladas (sumas y restas).
+**whenSubOperationWithScaleAndPrecisionReturnCorrectValue**
+- Validamos que el servicio efectua la operacion add de manera correcta con parámetros en los la escala y precisión han sido ajustadas.
 
-* whenValidOperationReturnValidOperation
-
-Testea el metodo de validacion del operator en la capa de servicios
-l
-
-Controller
-
-* whenOperationIsNotValidThenReturns400
-
-Testea que cuando llega al endpoint una peticion mal formada devuelva 400. 
-
-* whenOperationIsValidThenReturns200
-
-Testea que cuando llega al endpoint una peticion bien formada 200. 
-
-
-Generacion de jar y ejecución
---------------------
+## Generacion de jar y ejecución
 
 Para generar el jar desde la carpeta del proyecto ejecutar comando
 
-mvn clean package
+    mvn clean package
 
-Para ejecutar jar
+Para ejecutar
 
-java -jar 
+    java -jar ./target/calculator-0.0.1-SNAPSHOT.jar
 
+## Ejemplos
 
+**add con nombre de parámetros correctos**
 
+    curl -i -H --location --request GET 'http://localhost:8080/operate?op1=1231.12&op2=12.389&operation=add'
+    
+	HTTP/1.1 200
+	Content-Type: application/json
+	Transfer-Encoding: chunked
+	Date: Tue, 25 May 2021 14:32:33 GMT
+
+	1243.509
+    
+**add con nombre de parámetros incorrectos op11 en lugar de op1**
+
+	curl -i -H --location --request GET 'http://localhost:8080/operate?op11=1231.12&op2=12.389&operation=add'
+	HTTP/1.1 400
+	Content-Type: application/json
+	Transfer-Encoding: chunked
+	Date: Tue, 25 May 2021 14:33:30 GMT
+	Connection: close
+
+	{"timestamp":"2021-05-25T14:33:30.378+00:00","status":400,"error":"Bad Request","path":"/operate"}
+
+**sub con nombre de parámetros correctos**
+
+	curl -i -H --location --request GET 'http://localhost:8080/operate?op1=12.12&op2=12.389&operation=sub'	
+	HTTP/1.1 200
+	Content-Type: application/json
+	Transfer-Encoding: chunked
+	Date: Tue, 25 May 2021 14:35:17 GMT
+
+	-0.269
+    
+
+**operacion no existente con nombre de parámetros correctos**
+
+	curl -i -H --location --request GET 'http://localhost:8080/operate?op1=1231.12&op2=12.389&operation=no_existente'
+	
+	HTTP/1.1 400
+	Content-Length: 0
+	Date: Tue, 25 May 2021 14:36:15 GMT
+	Connection: close
 
 
