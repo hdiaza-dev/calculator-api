@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.hdiaza.calculator.services.AddService;
+import com.hdiaza.calculator.services.CalculatorService;
 
 /**
  * The Class CalculatorControllerTest.
@@ -35,7 +35,7 @@ class CalculatorControllerTest {
 
 	/** The calculator service. */
 	@MockBean
-	private AddService addService;
+	private CalculatorService calculatorService;
 
 	/** The wac. */
 	@Autowired
@@ -58,15 +58,22 @@ class CalculatorControllerTest {
 	 * @throws Exception the exception
 	 */
 	@Test
-	void whenParametersAreNotValidThenReturns400() throws Exception {
-		when(addService.operate(new BigDecimal("0"), new BigDecimal("0"))).thenThrow(NoSuchBeanDefinitionException.class);
-		mockMvc.perform(get(OPERATE).param("op1", "0.000").param("op2", "0.000").param("operation", "312312"))
+	void whenOperationIsNotValidThenReturns400() throws Exception {
+		when(calculatorService.operate(new BigDecimal("0.000"), new BigDecimal("0.000"), "invalid_op"))
+				.thenThrow(NoSuchBeanDefinitionException.class);
+		mockMvc.perform(get(OPERATE).param("op1", "0.000").param("op2", "0.000").param("operation", "invalid_op"))
 				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void whenParameterNameIsNotValidThenReturns400() throws Exception {
 		mockMvc.perform(get(OPERATE).param("op", "0.000").param("op2", "0.000").param("operation", "add"))
 				.andExpect(status().isBadRequest());
-		mockMvc.perform(get(OPERATE).param("op1", "0.000").param("op", "0.000").param("operation", "add"))
-				.andExpect(status().isBadRequest());
-		mockMvc.perform(get(OPERATE).param("op1", "0.000").param("op2", "0.000").param("opera", "add"))
+	}
+
+	@Test
+	void whenParameterValueIsNotValidThenReturns400() throws Exception {
+		mockMvc.perform(get(OPERATE).param("op1", "AZZX").param("op2", "0.000").param("operation", "add"))
 				.andExpect(status().isBadRequest());
 	}
 
@@ -76,8 +83,9 @@ class CalculatorControllerTest {
 	 * @throws Exception the exception
 	 */
 	@Test
-	void whenParametersAreValidThenReturns200() throws Exception {
-		when(addService.operate(new BigDecimal(0), new BigDecimal(0))).thenReturn(new BigDecimal(0.000));
+	void whenAllIsValidThenReturns200() throws Exception {
+		when(calculatorService.operate(new BigDecimal("0.000"), new BigDecimal("0.000"), "add"))
+				.thenReturn(new BigDecimal("0.000"));
 		mockMvc.perform(get(OPERATE).param("op1", "0.000").param("op2", "0.000").param("operation", "add"))
 				.andExpect(status().isOk());
 	}

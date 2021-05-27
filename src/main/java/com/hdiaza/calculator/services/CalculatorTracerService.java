@@ -14,8 +14,8 @@ public class CalculatorTracerService implements TracerAPI {
 
 	@Override
 	public <T> void trace(T result) {
-		String resultString = "result :: ".concat("Resultado ".concat(result.toString()));
-		Pattern.compile(":").splitAsStream(resultString).skip(2).findFirst().ifPresent(log::info);
+		String resultString = "result :: ".concat(result.toString());
+		Pattern.compile(":").splitAsStream(resultString).skip(2).findFirst().ifPresent(log::error);
 	}
 
 }
